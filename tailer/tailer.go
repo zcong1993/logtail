@@ -69,7 +69,7 @@ func NewTailer(cfg *Config, logger log.Logger) (*Tailer, error) {
 func (t *Tailer) run() {
 	ticker := time.NewTicker(t.cfg.positionSyncInterval)
 	defer func() {
-		t.savePosition()
+		t.cfg.position.Remove(t.cfg.filename)
 		close(t.done)
 	}()
 
@@ -78,7 +78,10 @@ func (t *Tailer) run() {
 		case <-t.quit:
 			return
 		case <-ticker.C:
-			t.savePosition()
+			err := t.savePosition()
+			if err != nil {
+				level.Error(t.logger).Log("msg", "save position error", "error", err)
+			}
 		case l, ok := <-t.tail.Lines:
 			if !ok {
 				return
@@ -86,7 +89,7 @@ func (t *Tailer) run() {
 			if l.Err != nil {
 				level.Error(t.logger).Log("msg", "error reading line", "path", t.cfg.filename, "error", l.Err)
 			}
-			if err := t.cfg.handler(t.cfg.filename, l.Time, l.Text); err != nil {
+			if err := t.cfg.handler.Handle(t.cfg.filename, l.Time, l.Text); err != nil {
 				level.Error(t.logger).Log("msg", "error handling line", "path", t.cfg.filename, "error", err)
 			}
 		}
@@ -98,10 +101,13 @@ func (t *Tailer) savePosition() error {
 	if err != nil {
 		return err
 	}
+	level.Debug(t.logger).Log("fname", t.cfg.filename, "pos", pos)
 	return t.cfg.position.Put(t.cfg.filename, pos)
 }
 
-func (t *Tailer) Stop() {
+func (t *Tailer) Stop() error {
+	err := t.tail.Stop()
 	close(t.quit)
 	<-t.done
+	return err
 }

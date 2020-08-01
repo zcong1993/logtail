@@ -36,3 +36,7 @@ coverage.txt
 dist
 
 .envc
+
+logs
+
+position.json
