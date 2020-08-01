@@ -14,13 +14,13 @@ import (
 const positionFileMode = 0600
 
 type Config struct {
-	filename     string
-	saveInterval time.Duration
+	filename       string
+	saveint64erval time.Duration
 }
 
 type JSONFile struct {
 	cfg      *Config
-	position map[string]int
+	position map[string]int64
 	mu       sync.Mutex
 	logger   log.Logger
 	quit     chan struct{}
@@ -30,8 +30,8 @@ type JSONFile struct {
 func NewJSONFile(cfg *Config, logger log.Logger) *JSONFile {
 	f := &JSONFile{
 		cfg:      cfg,
-		position: make(map[string]int, 0),
-		logger:   logger,
+		position: make(map[string]int64, 0),
+		logger:   log.With(logger, "component", "position", "type", "jsonFile"),
 		quit:     make(chan struct{}),
 		done:     make(chan struct{}),
 	}
@@ -44,35 +44,45 @@ func (f *JSONFile) Name() string {
 	return "jsonFile"
 }
 
-func (f *JSONFile) GetAll() map[string]int {
+func (f *JSONFile) GetAll() map[string]int64 {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.position
 }
 
-func (f *JSONFile) Get(name string) (int, bool) {
+func (f *JSONFile) Get(name string) int64 {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	p, ok := f.position[name]
-	return p, ok
+	if !ok {
+		return 0
+	}
+	return p
 }
 
-func (f *JSONFile) Put(name string, p int) error {
+func (f *JSONFile) Put(name string, p int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.position[name] = p
 	return nil
 }
 
-func (f *JSONFile) Replace(new map[string]int) error {
+func (f *JSONFile) Replace(new map[string]int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.position = new
 	return nil
 }
 
+func (f *JSONFile) Remove(name string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.position, name)
+	return nil
+}
+
 func (f *JSONFile) run() {
-	t := time.NewTicker(f.cfg.saveInterval)
+	t := time.NewTicker(f.cfg.saveint64erval)
 	defer func() {
 		err := f.save()
 		if err != nil {
