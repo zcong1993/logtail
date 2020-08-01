@@ -39,9 +39,8 @@ func (m *Mem) Replace(new map[string]int) error {
 	return nil
 }
 
-func (m *Mem) Close() error {
-	m.store = nil
-	return nil
+func (m *Mem) Stop() {
+	return
 }
 
 func cloneStore(mp map[string]int) map[string]int {
