@@ -7,4 +7,4 @@ FROM alpine:3.12
 WORKDIR /opt
 RUN apk add --no-cache ca-certificates
 COPY --from=build /mnt/bin/* /usr/bin/
-CMD ["logtail"]
+ENTRYPOINT ["logtail"]
