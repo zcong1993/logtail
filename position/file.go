@@ -14,8 +14,8 @@ import (
 const positionFileMode = 0600
 
 type Config struct {
-	Filename       string
-	Saveint64erval time.Duration
+	Filename     string
+	SaveInterval time.Duration
 }
 
 type JSONFile struct {
@@ -89,7 +89,7 @@ func (f *JSONFile) Remove(name string) error {
 }
 
 func (f *JSONFile) run() {
-	t := time.NewTicker(f.cfg.Saveint64erval)
+	t := time.NewTicker(f.cfg.SaveInterval)
 	defer func() {
 		err := f.save()
 		if err != nil {

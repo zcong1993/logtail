@@ -30,8 +30,8 @@ func main() {
 	level.Info(logger).Log("msg", "Starting logtailer")
 
 	po := position.NewJSONFile(&position.Config{
-		Filename:       *positionFile,
-		Saveint64erval: *interval,
+		Filename:     *positionFile,
+		SaveInterval: *interval,
 	}, logger)
 
 	_, err := tailer.NewManager(&tailer.ManagerConfig{
