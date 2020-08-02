@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"os"
 
 	"github.com/zcong1993/logtail/handler"
 	"github.com/zcong1993/logtail/tailer"
@@ -16,6 +16,12 @@ import (
 var logConfig = log.Config{}
 
 func main() {
+	var (
+		positionFile = kingpin.Flag("position.file", "Position file name.").Default("position.json").String()
+		interval     = kingpin.Flag("interval", "All ticker interval.").Default("10s").Duration()
+		path         = kingpin.Flag("path", "Watch log path, support double star.").Required().String()
+	)
+
 	flag.AddFlags(kingpin.CommandLine, &logConfig)
 	kingpin.CommandLine.GetFlag("help").Short('h')
 	kingpin.Parse()
@@ -23,21 +29,21 @@ func main() {
 	logger := log.New(&logConfig)
 	level.Info(logger).Log("msg", "Starting logtailer")
 
-	interval := time.Second * 5
 	po := position.NewJSONFile(&position.Config{
-		Filename:       "position.json",
-		Saveint64erval: interval,
+		Filename:       *positionFile,
+		Saveint64erval: *interval,
 	}, logger)
 
 	_, err := tailer.NewManager(&tailer.ManagerConfig{
-		Path:         "./logs/*.log",
+		Path:         *path,
 		Handler:      handler.StdHandler,
 		Position:     po,
-		SyncInterval: interval,
+		SyncInterval: *interval,
 	}, logger)
 
 	if err != nil {
-		panic(err)
+		level.Error(logger).Log("msg", "create manage error", "error", err)
+		os.Exit(1)
 	}
 
 	c := make(chan struct{})
